@@ -13,9 +13,11 @@ class Product(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    category: Mapped[str] = mapped_column(String(100), default="", server_default="", nullable=False)
     sku: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     image_file_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     cost_price: Mapped[float] = mapped_column(Float, nullable=False)
+    purchase_price: Mapped[float] = mapped_column(Float, default=0, server_default="0", nullable=False)
     sale_price: Mapped[float] = mapped_column(Float, nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -38,6 +40,7 @@ class Sale(Base):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     sale_price: Mapped[float] = mapped_column(Float, nullable=False)
     cost_price: Mapped[float] = mapped_column(Float, nullable=False)
+    purchase_price: Mapped[float] = mapped_column(Float, default=0, server_default="0", nullable=False)
     is_cancelled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False

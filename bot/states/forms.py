@@ -13,7 +13,7 @@ class AddProductStates(StatesGroup):
 class SellProductStates(StatesGroup):
     select_product = State()
     quantity = State()
-    custom_price = State()
+    sale_price = State()
 
 
 class AddExpenseStates(StatesGroup):

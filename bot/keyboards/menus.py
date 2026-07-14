@@ -21,6 +21,7 @@ SELLER_MENU = ReplyKeyboardMarkup(
 def get_menu(is_main: bool) -> ReplyKeyboardMarkup:
     return MAIN_MENU if is_main else SELLER_MENU
 
+
 CANCEL_KB = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="❌ Bekor qilish")]],
     resize_keyboard=True,
@@ -65,15 +66,6 @@ HISTORY_KB = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="📜 So'nggi sotuvlar"), KeyboardButton(text="↩️ Sotuvni bekor qilish")],
         [KeyboardButton(text="🔙 Orqaga")],
-    ],
-    resize_keyboard=True,
-)
-
-PRICE_KB = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="✅ Standart narx")],
-        [KeyboardButton(text="💱 Boshqa narx")],
-        [KeyboardButton(text="❌ Bekor qilish")],
     ],
     resize_keyboard=True,
 )

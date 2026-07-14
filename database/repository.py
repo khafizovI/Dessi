@@ -44,7 +44,9 @@ class ProductRepository:
             sku=sku.upper(),
             quantity=quantity,
             cost_price=cost_price,
+            purchase_price=cost_price,
             sale_price=sale_price,
+            category="",
             image_file_id=image_file_id,
         )
         self.session.add(product)
@@ -113,6 +115,7 @@ class SaleRepository:
             quantity=quantity,
             sale_price=sale_price,
             cost_price=product.cost_price,
+            purchase_price=product.cost_price,
             admin_id=admin.id if admin else None,
             admin_name=admin.name if admin else "",
         )

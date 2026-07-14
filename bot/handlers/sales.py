@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from bot.keyboards.menus import CANCEL_KB, PRICE_KB, get_menu, product_list_kb
+from bot.keyboards.menus import CANCEL_KB, get_menu, product_list_kb
 from bot.states.forms import SellProductStates
 from config import settings
 from database.repository import AdminRepository, ProductRepository, SaleRepository
@@ -43,18 +43,23 @@ async def _complete_sale(
     total = sale.sale_price * sale.quantity
     profit = (sale.sale_price - sale.cost_price) * sale.quantity
     admin_name = sale.admin_name or "Noma'lum"
-    discount = ""
-    if sale_price != data.get("default_price"):
-        discount = f"\n💱 Chegirma: <b>{data['default_price']:,.0f}</b> → <b>{sale_price:,.0f}</b> so'm"
+    catalog_price = data.get("default_price", sale_price)
+    price_note = ""
+    if sale_price != catalog_price:
+        price_note = (
+            f"\n💱 Katalog: <b>{catalog_price:,.0f}</b> → "
+            f"Sotildi: <b>{sale_price:,.0f}</b> so'm"
+        )
 
     text = (
         f"✅ <b>Sotuv qayd etildi!</b>\n\n"
         f"👤 Sotuvchi: <b>{admin_name}</b>\n"
         f"👕 <b>{data['product_name']}</b>\n"
         f"🔢 Sotildi: <b>{sale.quantity}</b> ta\n"
+        f"💰 1 dona: <b>{sale.sale_price:,.0f}</b> so'm\n"
         f"💰 Jami: <b>{total:,.0f}</b> so'm\n"
         f"✨ Foyda: <b>{profit:,.0f}</b> so'm"
-        f"{discount}\n"
+        f"{price_note}\n"
         f"📦 Qoldiq: <b>{product.quantity}</b> ta"
     )
     await message.answer(text, reply_markup=get_menu(is_main), parse_mode="HTML")
@@ -108,7 +113,7 @@ async def sell_select_product(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(
         f"👕 <b>{product.name}</b> ({product.sku})\n"
         f"📦 Omborda: <b>{product.quantity}</b> ta\n"
-        f"🏷 Narxi: <b>{product.sale_price:,.0f}</b> so'm\n\n"
+        f"🏷 Katalog narxi: <b>{product.sale_price:,.0f}</b> so'm\n\n"
         f"🔢 Sotilgan sonini kiriting:",
         reply_markup=CANCEL_KB,
         parse_mode="HTML",
@@ -127,36 +132,19 @@ async def sell_quantity(message: Message, state: FSMContext):
         return
 
     await state.update_data(quantity=qty)
-    await state.set_state(SellProductStates.custom_price)
+    await state.set_state(SellProductStates.sale_price)
     data = await state.get_data()
     await message.answer(
-        f"🏷 Standart narx: <b>{data['default_price']:,.0f}</b> so'm\n\n"
-        f"Boshqa narxda sotildimi?",
-        reply_markup=PRICE_KB,
-        parse_mode="HTML",
-    )
-
-
-@router.message(SellProductStates.custom_price, F.text == "✅ Standart narx")
-async def sell_standard_price(message: Message, state: FSMContext, is_main: bool = True):
-    data = await state.get_data()
-    await _complete_sale(message, state, data["default_price"], is_main)
-
-
-@router.message(SellProductStates.custom_price, F.text == "💱 Boshqa narx")
-async def sell_ask_custom_price(message: Message, state: FSMContext):
-    await message.answer(
-        "💱 <b>Sotilgan narxni kiriting (1 dona, so'm):</b>\n"
-        "<i>Masalan: 300000</i>",
+        f"💱 <b>Sotilgan narxni kiriting (1 dona, so'm):</b>\n"
+        f"🏷 Katalog narxi: <b>{data['default_price']:,.0f}</b> so'm\n"
+        f"<i>Masalan: 300000</i>",
         reply_markup=CANCEL_KB,
         parse_mode="HTML",
     )
 
 
-@router.message(SellProductStates.custom_price)
-async def sell_custom_price(message: Message, state: FSMContext, is_main: bool = True):
-    if message.text in ("✅ Standart narx", "💱 Boshqa narx"):
-        return
+@router.message(SellProductStates.sale_price)
+async def sell_price(message: Message, state: FSMContext, is_main: bool = True):
     try:
         price = float(message.text.strip().replace(" ", "").replace(",", ""))
         if price <= 0:

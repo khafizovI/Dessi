@@ -42,6 +42,24 @@ def _migrate_sync(connection) -> None:
                 connection.execute(
                     text("ALTER TABLE products ADD COLUMN cost_price FLOAT DEFAULT 0")
                 )
+        if "category" in cols:
+            connection.execute(
+                text("UPDATE products SET category = '' WHERE category IS NULL")
+            )
+        if "purchase_price" in cols and "cost_price" in cols:
+            connection.execute(
+                text(
+                    "UPDATE products SET purchase_price = cost_price "
+                    "WHERE purchase_price IS NULL OR purchase_price = 0"
+                )
+            )
+        elif "purchase_price" in cols and "cost_price" not in cols:
+            connection.execute(
+                text("ALTER TABLE products ADD COLUMN cost_price FLOAT DEFAULT 0")
+            )
+            connection.execute(
+                text("UPDATE products SET cost_price = purchase_price")
+            )
 
     if "sales" in tables:
         cols = {c["name"] for c in inspector.get_columns("sales")}
@@ -74,6 +92,13 @@ def _migrate_sync(connection) -> None:
             )
         if "cancelled_at" not in cols:
             connection.execute(text("ALTER TABLE sales ADD COLUMN cancelled_at DATETIME"))
+        if "purchase_price" in cols and "cost_price" in cols:
+            connection.execute(
+                text(
+                    "UPDATE sales SET purchase_price = cost_price "
+                    "WHERE purchase_price IS NULL OR purchase_price = 0"
+                )
+            )
 
     if "expenses" not in tables:
         Base.metadata.tables["expenses"].create(connection)
