@@ -102,6 +102,14 @@ def _migrate_sync(connection) -> None:
 
     if "expenses" not in tables:
         Base.metadata.tables["expenses"].create(connection)
+    elif "expenses" in tables:
+        cols = {c["name"] for c in inspector.get_columns("expenses")}
+        if "admin_name" not in cols:
+            connection.execute(
+                text(
+                    "ALTER TABLE expenses ADD COLUMN admin_name VARCHAR(100) DEFAULT ''"
+                )
+            )
 
     if "admins" in tables:
         cols = {c["name"] for c in inspector.get_columns("admins")}
