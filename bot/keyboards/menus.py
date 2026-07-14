@@ -86,6 +86,7 @@ HISTORY_KB = ReplyKeyboardMarkup(
 EXPENSE_KB = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="➕ Xarajat qo'shish"), KeyboardButton(text="📋 Xarajatlar")],
+        [KeyboardButton(text="🗑 Xarajat o'chirish")],
         [KeyboardButton(text="🔙 Orqaga")],
     ],
     resize_keyboard=True,
@@ -107,6 +108,17 @@ def product_delete_kb(products: list) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=f"🗑 {p.name}", callback_data=f"prod_del:{p.id}")]
         for p in products
     ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def expense_delete_kb(expenses: list) -> InlineKeyboardMarkup:
+    buttons = []
+    for e in expenses:
+        date = e.created_at.strftime("%d.%m")
+        label = f"🗑 {date} | {e.description} | {e.amount:,.0f}"
+        buttons.append(
+            [InlineKeyboardButton(text=label, callback_data=f"exp_del:{e.id}")]
+        )
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 

@@ -14,6 +14,7 @@ MAIN_ONLY_MESSAGES = {
     "📝 Xarajat",
     "➕ Xarajat qo'shish",
     "📋 Xarajatlar",
+    "🗑 Xarajat o'chirish",
     "👤 Adminlar",
     "📅 Bugun",
     "📅 Kecha",
@@ -30,7 +31,7 @@ MAIN_ONLY_MESSAGES = {
     "🗑 Mahsulot o'chirish",
 }
 
-MAIN_ONLY_CALLBACKS = ("adm_del:", "cancel_sale:", "prod_del:")
+MAIN_ONLY_CALLBACKS = ("adm_del:", "cancel_sale:", "prod_del:", "exp_del:")
 
 
 class AdminMiddleware(BaseMiddleware):

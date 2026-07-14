@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from bot.keyboards.menus import CANCEL_KB, EXPENSE_KB, HISTORY_KB, sale_cancel_kb
+from bot.keyboards.menus import CANCEL_KB, EXPENSE_KB, HISTORY_KB, expense_delete_kb, sale_cancel_kb
 from bot.states.forms import AddExpenseStates
 from database.repository import AdminRepository, ExpenseRepository, SaleRepository
 from database.session import async_session
@@ -65,6 +65,46 @@ async def list_expenses(message: Message):
         await message.answer(text[4000:], parse_mode="HTML", reply_markup=EXPENSE_KB)
     else:
         await message.answer(text, parse_mode="HTML", reply_markup=EXPENSE_KB)
+
+
+@router.message(F.text == "🗑 Xarajat o'chirish")
+async def delete_expense_start(message: Message, state: FSMContext):
+    await state.clear()
+    async with async_session() as session:
+        repo = ExpenseRepository(session)
+        expenses = await repo.get_all(limit=20)
+
+    if not expenses:
+        await message.answer(
+            "📭 O'chirish uchun xarajat yo'q.",
+            reply_markup=EXPENSE_KB,
+        )
+        return
+
+    await message.answer(
+        "🗑 <b>O'chirish uchun xarajatni tanlang:</b>",
+        reply_markup=expense_delete_kb(expenses),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data.startswith("exp_del:"))
+async def delete_expense_confirm(callback: CallbackQuery):
+    expense_id = int(callback.data.split(":")[1])
+    async with async_session() as session:
+        repo = ExpenseRepository(session)
+        expense = await repo.delete(expense_id)
+
+    if not expense:
+        await callback.answer("⚠️ Xarajat topilmadi!", show_alert=True)
+        return
+
+    await callback.message.edit_text(
+        f"✅ <b>{expense.description}</b> o'chirildi! 🗑\n"
+        f"💵 {expense.amount:,.0f} so'm",
+        parse_mode="HTML",
+    )
+    await callback.answer()
 
 
 @router.message(AddExpenseStates.description)
