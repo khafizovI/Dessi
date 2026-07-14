@@ -26,7 +26,7 @@ async def main() -> None:
         sys.exit(1)
 
     await init_db()
-    logger.info("✅ Ma'lumotlar bazasi tayyor")
+    logger.info("✅ Ma'lumotlar bazasi tayyor: %s", settings.db_path)
 
     bot = Bot(
         token=settings.bot_token,

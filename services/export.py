@@ -6,14 +6,14 @@ from fpdf import FPDF
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
+from config import EXPORTS_DIR
 from database.repository import ReportData
 from services.report_builder import fmt_money
 
 
 def _exports_dir() -> str:
-    path = os.path.join(os.getcwd(), "exports")
-    os.makedirs(path, exist_ok=True)
-    return path
+    EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    return str(EXPORTS_DIR)
 
 
 def _pdf_safe(text: str) -> str:
