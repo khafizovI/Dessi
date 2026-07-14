@@ -2,24 +2,69 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from bot.keyboards.menus import CANCEL_KB, HISTORY_KB, get_menu, sale_cancel_kb
+from bot.keyboards.menus import CANCEL_KB, EXPENSE_KB, HISTORY_KB, sale_cancel_kb
 from bot.states.forms import AddExpenseStates
 from database.repository import AdminRepository, ExpenseRepository, SaleRepository
 from database.session import async_session
+from services.report_builder import format_expense_lines
 
 router = Router()
 
 
 @router.message(F.text == "📝 Xarajat")
 async def expense_menu(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer(
+        "📝 <b>Xarajatlar boshqaruvi</b>\n\n👇 Tanlang:",
+        reply_markup=EXPENSE_KB,
+        parse_mode="HTML",
+    )
+
+
+@router.message(F.text == "➕ Xarajat qo'shish")
+async def add_expense_start(message: Message, state: FSMContext):
     await state.set_state(AddExpenseStates.description)
     await message.answer(
-        "📝 <b>Xarajat qo'shish</b>\n\n"
-        "📋 Tavsifni kiriting:\n"
+        "➕ <b>Xarajat qo'shish</b>\n\n"
+        "📋 Sabab / tavsifni kiriting:\n"
         "<i>Masalan: Reklama, Yetkazib berish...</i>",
         reply_markup=CANCEL_KB,
         parse_mode="HTML",
     )
+
+
+@router.message(F.text == "📋 Xarajatlar")
+async def list_expenses(message: Message):
+    async with async_session() as session:
+        repo = ExpenseRepository(session)
+        expenses = await repo.get_all()
+
+    if not expenses:
+        await message.answer(
+            "📭 Hozircha xarajatlar yo'q.\n➕ Xarajat qo'shing!",
+            reply_markup=EXPENSE_KB,
+        )
+        return
+
+    items = [
+        {
+            "description": e.description,
+            "amount": e.amount,
+            "admin_name": e.admin_name,
+            "date": e.created_at.strftime("%d.%m.%Y %H:%M"),
+        }
+        for e in expenses
+    ]
+    total = sum(e.amount for e in expenses)
+    lines = ["📋 <b>Xarajatlar ro'yxati:</b>\n"]
+    lines.extend(format_expense_lines(items, total))
+
+    text = "\n".join(lines)
+    if len(text) > 4000:
+        await message.answer(text[:4000], parse_mode="HTML")
+        await message.answer(text[4000:], parse_mode="HTML", reply_markup=EXPENSE_KB)
+    else:
+        await message.answer(text, parse_mode="HTML", reply_markup=EXPENSE_KB)
 
 
 @router.message(AddExpenseStates.description)
@@ -35,7 +80,7 @@ async def expense_description(message: Message, state: FSMContext):
 
 
 @router.message(AddExpenseStates.amount)
-async def expense_amount(message: Message, state: FSMContext, is_main: bool = True):
+async def expense_amount(message: Message, state: FSMContext):
     try:
         amount = float(message.text.strip().replace(" ", "").replace(",", ""))
         if amount <= 0:
@@ -59,7 +104,7 @@ async def expense_amount(message: Message, state: FSMContext, is_main: bool = Tr
         f"✅ <b>Xarajat qo'shildi!</b>\n\n"
         f"📋 <b>{expense.description}</b>\n"
         f"💵 <b>{expense.amount:,.0f}</b> so'm",
-        reply_markup=get_menu(is_main),
+        reply_markup=EXPENSE_KB,
         parse_mode="HTML",
     )
 

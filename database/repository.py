@@ -20,6 +20,7 @@ class ReportData:
     sale_count: int = 0
     expenses: float = 0
     net_profit: float = 0
+    expense_items: list[dict] = field(default_factory=list)
     products: list[dict] = field(default_factory=list)
     top_product: dict | None = None
     least_product: dict | None = None
@@ -210,6 +211,16 @@ class SaleRepository:
 
         expense_repo = ExpenseRepository(self.session)
         expenses = await expense_repo.get_total_between(since, until)
+        expense_list = await expense_repo.get_all_between(since, until)
+        expense_items = [
+            {
+                "description": e.description,
+                "amount": e.amount,
+                "admin_name": e.admin_name or "",
+                "date": e.created_at.strftime("%d.%m.%Y %H:%M"),
+            }
+            for e in expense_list
+        ]
 
         product_rows = await self.session.execute(
             select(
@@ -276,6 +287,7 @@ class SaleRepository:
             sale_count=int(row.count),
             expenses=expenses,
             net_profit=profit - expenses,
+            expense_items=expense_items,
             products=products,
             top_product=top_product,
             least_product=least_product,
@@ -314,6 +326,12 @@ class ExpenseRepository:
             select(Expense)
             .where(Expense.created_at >= since, Expense.created_at < until)
             .order_by(Expense.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def get_all(self, limit: int = 100) -> list[Expense]:
+        result = await self.session.execute(
+            select(Expense).order_by(Expense.created_at.desc()).limit(limit)
         )
         return list(result.scalars().all())
 

@@ -83,6 +83,14 @@ HISTORY_KB = ReplyKeyboardMarkup(
     resize_keyboard=True,
 )
 
+EXPENSE_KB = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="➕ Xarajat qo'shish"), KeyboardButton(text="📋 Xarajatlar")],
+        [KeyboardButton(text="🔙 Orqaga")],
+    ],
+    resize_keyboard=True,
+)
+
 
 def product_list_kb(products: list, prefix: str = "prod") -> InlineKeyboardMarkup:
     buttons = []

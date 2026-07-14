@@ -5,6 +5,23 @@ def fmt_money(value: float) -> str:
     return f"{value:,.0f}"
 
 
+def format_expense_lines(items: list[dict], total: float | None = None) -> list[str]:
+    if not items:
+        return ["📭 Xarajatlar yo'q."]
+
+    lines = []
+    for e in items:
+        who = f" ({e['admin_name']})" if e.get("admin_name") else ""
+        date = f"{e['date']} | " if e.get("date") else ""
+        lines.append(
+            f"  • {date}<b>{e['description']}</b>{who}\n"
+            f"    💵 {fmt_money(e['amount'])} so'm"
+        )
+    if total is not None:
+        lines.append(f"\n📝 <b>Jami xarajat:</b> {fmt_money(total)} so'm")
+    return lines
+
+
 def build_report_text(report: ReportData) -> str:
     lines = [
         f"{report.period_label} <b>hisobot</b>\n",
@@ -16,6 +33,10 @@ def build_report_text(report: ReportData) -> str:
         f"📦 Sotilgan mahsulot: <b>{report.total_qty}</b> dona",
         f"🛒 Sotuvlar soni: <b>{report.sale_count}</b> ta",
     ]
+
+    if report.expense_items:
+        lines.append("\n📝 <b>Xarajatlar ro'yxati:</b>")
+        lines.extend(format_expense_lines(report.expense_items))
 
     if report.top_product:
         t = report.top_product
@@ -48,7 +69,7 @@ def build_report_text(report: ReportData) -> str:
                 f"💵 {fmt_money(p['cost'])} | "
                 f"✨ {fmt_money(p['profit'])}"
             )
-    else:
+    elif not report.expense_items:
         lines.append("\n📭 Bu davrda sotuvlar yo'q.")
 
     return "\n".join(lines)

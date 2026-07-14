@@ -12,6 +12,8 @@ MAIN_ONLY_MESSAGES = {
     "📊 Hisobot",
     "📜 Tarix",
     "📝 Xarajat",
+    "➕ Xarajat qo'shish",
+    "📋 Xarajatlar",
     "👤 Adminlar",
     "📅 Bugun",
     "📅 Kecha",

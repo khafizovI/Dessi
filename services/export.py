@@ -56,6 +56,13 @@ def export_excel(report: ReportData) -> str:
             ws.append([a["name"], a["count"], a["qty"], a["revenue"]])
         ws.append([])
 
+    if report.expense_items:
+        ws.append(["Xarajatlar ro'yxati"])
+        ws.append(["Sana", "Sabab", "Summa", "Kim"])
+        for e in report.expense_items:
+            ws.append([e.get("date", ""), e["description"], e["amount"], e.get("admin_name", "")])
+        ws.append([])
+
     ws.append(["Mahsulot", "SKU", "Sotildi", "Tushum", "Dastmoya", "Foyda"])
     for p in report.products:
         ws.append([p["name"], p["sku"], p["qty"], p["revenue"], p["cost"], p["profit"]])
@@ -119,6 +126,20 @@ def export_pdf(report: ReportData) -> str:
                 _pdf_safe(
                     f"{a['name']}: {a['count']} sotuv, "
                     f"{fmt_money(a['revenue'])} so'm"
+                ),
+                ln=True,
+            )
+
+    if report.expense_items:
+        pdf.ln(4)
+        pdf.set_font("Helvetica", style="B", size=11)
+        pdf.cell(0, 8, "Xarajatlar:", ln=True)
+        pdf.set_font("Helvetica", size=9)
+        for e in report.expense_items:
+            pdf.cell(
+                0, 6,
+                _pdf_safe(
+                    f"{e['description']}: {fmt_money(e['amount'])} so'm"
                 ),
                 ln=True,
             )
