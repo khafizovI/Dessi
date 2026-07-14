@@ -1,8 +1,14 @@
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import CallbackQuery, Message
 
-from bot.keyboards.menus import CANCEL_KB, INVENTORY_KB, SKIP_IMAGE_KB, get_menu
+from bot.keyboards.menus import (
+    CANCEL_KB,
+    SKIP_IMAGE_KB,
+    get_inventory_kb,
+    get_menu,
+    product_delete_kb,
+)
 from bot.states.forms import AddProductStates
 from config import settings
 from database.repository import ProductRepository
@@ -170,17 +176,17 @@ async def add_product_quantity(message: Message, state: FSMContext):
 
 
 @router.message(F.text == "📦 Ombor")
-async def inventory_menu(message: Message, state: FSMContext):
+async def inventory_menu(message: Message, state: FSMContext, is_main: bool = True):
     await state.clear()
     await message.answer(
         "📦 <b>Ombor boshqaruvi</b>\n\n👇 Tanlang:",
-        reply_markup=INVENTORY_KB,
+        reply_markup=get_inventory_kb(is_main),
         parse_mode="HTML",
     )
 
 
 @router.message(F.text == "📋 Barcha mahsulotlar")
-async def show_all_products(message: Message):
+async def show_all_products(message: Message, is_main: bool = True):
     async with async_session() as session:
         repo = ProductRepository(session)
         products = await repo.get_all()
@@ -188,7 +194,7 @@ async def show_all_products(message: Message):
     if not products:
         await message.answer(
             "📭 Omborda mahsulot yo'q.\n➕ Yangi mahsulot qo'shing!",
-            reply_markup=INVENTORY_KB,
+            reply_markup=get_inventory_kb(is_main),
         )
         return
 
@@ -216,11 +222,11 @@ async def show_all_products(message: Message):
             chunk = lines[:1] + lines[1 + i : 1 + i + 15] if i == 0 else lines[1 + i : 1 + i + 15]
             await message.answer("\n".join(chunk), parse_mode="HTML")
     else:
-        await message.answer(text, parse_mode="HTML", reply_markup=INVENTORY_KB)
+        await message.answer(text, parse_mode="HTML", reply_markup=get_inventory_kb(is_main))
 
 
 @router.message(F.text == "⚠️ Kam qolganlar")
-async def show_low_stock(message: Message):
+async def show_low_stock(message: Message, is_main: bool = True):
     async with async_session() as session:
         repo = ProductRepository(session)
         low = await repo.get_low_stock(settings.low_stock_threshold)
@@ -229,7 +235,7 @@ async def show_low_stock(message: Message):
         await message.answer(
             f"✅ Barcha mahsulotlar yetarli!\n"
             f"⚠️ Ogohlantirish: ≤{settings.low_stock_threshold} ta",
-            reply_markup=INVENTORY_KB,
+            reply_markup=get_inventory_kb(is_main),
         )
         return
 
@@ -240,4 +246,47 @@ async def show_low_stock(message: Message):
         emoji = "🔴" if p.quantity == 0 else "🟡"
         lines.append(f"{emoji} <b>{p.name}</b> — {p.quantity} dona qoldi.")
 
-    await message.answer("\n".join(lines), parse_mode="HTML", reply_markup=INVENTORY_KB)
+    await message.answer(
+        "\n".join(lines), parse_mode="HTML", reply_markup=get_inventory_kb(is_main)
+    )
+
+
+@router.message(F.text == "🗑 Mahsulot o'chirish")
+async def delete_product_start(message: Message, state: FSMContext):
+    await state.clear()
+    async with async_session() as session:
+        repo = ProductRepository(session)
+        products = await repo.get_all()
+
+    if not products:
+        await message.answer(
+            "📭 O'chirish uchun mahsulot yo'q.",
+            reply_markup=get_inventory_kb(True),
+        )
+        return
+
+    await message.answer(
+        "🗑 <b>O'chirish uchun mahsulotni tanlang:</b>\n"
+        "<i>Sotuvlar tarixi saqlanadi</i>",
+        reply_markup=product_delete_kb(products),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data.startswith("prod_del:"))
+async def delete_product_confirm(callback: CallbackQuery):
+    product_id = int(callback.data.split(":")[1])
+    async with async_session() as session:
+        repo = ProductRepository(session)
+        product = await repo.deactivate(product_id)
+
+    if not product:
+        await callback.answer("⚠️ Mahsulot topilmadi!", show_alert=True)
+        return
+
+    await callback.message.edit_text(
+        f"✅ <b>{product.name}</b> ombordan o'chirildi! 🗑\n"
+        f"🔖 SKU: {product.sku}",
+        parse_mode="HTML",
+    )
+    await callback.answer()

@@ -115,6 +115,16 @@ def _migrate_sync(connection) -> None:
                 text(f"UPDATE admins SET is_main = 1 WHERE telegram_id IN ({ids_str})")
             )
 
+    if "products" in tables:
+        cols = {c["name"] for c in inspector.get_columns("products")}
+        if "is_active" not in cols:
+            connection.execute(
+                text("ALTER TABLE products ADD COLUMN is_active BOOLEAN DEFAULT 1")
+            )
+            connection.execute(
+                text("UPDATE products SET is_active = 1 WHERE is_active IS NULL")
+            )
+
 
 async def init_db() -> None:
     async with engine.begin() as conn:

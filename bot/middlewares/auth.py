@@ -25,9 +25,10 @@ MAIN_ONLY_MESSAGES = {
     "👥 Adminlar ro'yxati",
     "➕ Admin qo'shish",
     "🗑 Admin o'chirish",
+    "🗑 Mahsulot o'chirish",
 }
 
-MAIN_ONLY_CALLBACKS = ("adm_del:", "cancel_sale:")
+MAIN_ONLY_CALLBACKS = ("adm_del:", "cancel_sale:", "prod_del:")
 
 
 class AdminMiddleware(BaseMiddleware):

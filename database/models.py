@@ -20,6 +20,7 @@ class Product(Base):
     purchase_price: Mapped[float] = mapped_column(Float, default=0, server_default="0", nullable=False)
     sale_price: Mapped[float] = mapped_column(Float, nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )

@@ -62,6 +62,19 @@ INVENTORY_KB = ReplyKeyboardMarkup(
     resize_keyboard=True,
 )
 
+INVENTORY_MAIN_KB = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="📋 Barcha mahsulotlar"), KeyboardButton(text="⚠️ Kam qolganlar")],
+        [KeyboardButton(text="🗑 Mahsulot o'chirish")],
+        [KeyboardButton(text="🔙 Orqaga")],
+    ],
+    resize_keyboard=True,
+)
+
+
+def get_inventory_kb(is_main: bool) -> ReplyKeyboardMarkup:
+    return INVENTORY_MAIN_KB if is_main else INVENTORY_KB
+
 HISTORY_KB = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="📜 So'nggi sotuvlar"), KeyboardButton(text="↩️ Sotuvni bekor qilish")],
@@ -78,6 +91,14 @@ def product_list_kb(products: list, prefix: str = "prod") -> InlineKeyboardMarku
         buttons.append(
             [InlineKeyboardButton(text=label, callback_data=f"{prefix}:{p.id}")]
         )
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def product_delete_kb(products: list) -> InlineKeyboardMarkup:
+    buttons = [
+        [InlineKeyboardButton(text=f"🗑 {p.name}", callback_data=f"prod_del:{p.id}")]
+        for p in products
+    ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 

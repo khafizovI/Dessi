@@ -56,29 +56,45 @@ class ProductRepository:
 
     async def get_by_id(self, product_id: int) -> Product | None:
         result = await self.session.execute(
-            select(Product).where(Product.id == product_id)
+            select(Product).where(Product.id == product_id, Product.is_active.is_(True))
         )
         return result.scalar_one_or_none()
 
     async def get_by_sku(self, sku: str) -> Product | None:
         result = await self.session.execute(
-            select(Product).where(Product.sku == sku.upper())
+            select(Product).where(
+                Product.sku == sku.upper(), Product.is_active.is_(True)
+            )
         )
         return result.scalar_one_or_none()
 
     async def get_all(self) -> list[Product]:
         result = await self.session.execute(
-            select(Product).order_by(Product.name)
+            select(Product)
+            .where(Product.is_active.is_(True))
+            .order_by(Product.name)
         )
         return list(result.scalars().all())
 
     async def get_low_stock(self, threshold: int) -> list[Product]:
         result = await self.session.execute(
             select(Product)
-            .where(Product.quantity <= threshold)
+            .where(Product.is_active.is_(True), Product.quantity <= threshold)
             .order_by(Product.quantity)
         )
         return list(result.scalars().all())
+
+    async def deactivate(self, product_id: int) -> Product | None:
+        result = await self.session.execute(
+            select(Product).where(Product.id == product_id, Product.is_active.is_(True))
+        )
+        product = result.scalar_one_or_none()
+        if not product:
+            return None
+        product.is_active = False
+        await self.session.commit()
+        await self.session.refresh(product)
+        return product
 
     async def update_stock(self, product_id: int, delta: int) -> Product | None:
         product = await self.get_by_id(product_id)
